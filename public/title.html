@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>TDub - Series</title>
+  <meta name="description" content="Pick an episode and start watching on TDub." />
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <header class="site-header" id="site-header"></header>
+  <main class="wrap">
+    <div id="detail"><p class="empty">Loading...</p></div>
+  </main>
+  <footer class="site-footer" id="site-footer"></footer>
+
+  <script src="/js/config.js"></script>
+  <script src="/js/common.js"></script>
+  <script>
+    (function () {
+      var T = window.TDub;
+      T.header('title');
+      T.footer();
+      var id = T.param('id');
+      var box = document.getElementById('detail');
+
+      if (!id) {
+        box.innerHTML = '<p class="empty">No series was picked. <a href="/">Go to the library</a></p>';
+        return;
+      }
+
+      T.api('/api/series/' + encodeURIComponent(id)).then(function (data) {
+        var s = data.series;
+        document.title = s.title + ' - TDub';
+
+        var poster = s.poster ? '<img src="' + T.esc(s.poster) + '" alt="' + T.esc(s.title) + '" />' : '';
+        var meta = s.type === 'movie'
+          ? [s.year, s.duration || 'Movie'].filter(Boolean).join(' - ')
+          : [s.year, s.episodes.length + ' episode' + (s.episodes.length === 1 ? '' : 's')].filter(Boolean).join(' - ');
+        var chips = s.genres.map(function (g) { return '<span class="chip">' + T.esc(g) + '</span>'; }).join('');
+
+        var seasons = {};
+        s.episodes.forEach(function (ep) {
+          (seasons[ep.season] = seasons[ep.season] || []).push(ep);
+        });
+
+        var episodesHtml = '';
+        if (!s.episodes.length) {
+          episodesHtml = '<p class="empty">No episodes yet. Check back soon.</p>';
+        } else {
+          Object.keys(seasons).sort(function (a, b) { return a - b; }).forEach(function (season) {
+            episodesHtml += '<div class="season-title">Season ' + T.esc(season) + '</div><div class="ep-list">';
+            seasons[season].forEach(function (ep) {
+              var thumb = ep.thumbnail ? '<img src="' + T.esc(ep.thumbnail) + '" alt="" loading="lazy" />' : '';
+              episodesHtml += '<a class="ep" href="/watch.html?s=' + encodeURIComponent(s.id) + '&e=' + encodeURIComponent(ep.id) + '">' +
+                '<div class="thumb">' + thumb + '</div>' +
+                '<div><div class="num">Episode ' + T.esc(ep.number) + '</div>' +
+                '<div class="title">' + T.esc(ep.title || ('Episode ' + ep.number)) + '</div>' +
+                '<div class="desc">' + T.esc(ep.description || '') + '</div></div>' +
+                '<div class="len">' + T.esc(ep.duration || '') + '</div></a>';
+            });
+            episodesHtml += '</div>';
+          });
+        }
+
+        box.innerHTML =
+          '<section class="detail-top">' +
+            '<div class="poster">' + poster + '</div>' +
+            '<div>' +
+              '<h1>' + T.esc(s.title) + '</h1>' +
+              '<div class="meta">' + T.esc(meta) + '</div>' +
+              '<div class="chips">' + chips + '</div>' +
+              '<p class="desc">' + T.esc(s.description || '') + '</p>' +
+              (s.episodes.length ? '<p><a class="btn" href="/watch.html?s=' + encodeURIComponent(s.id) + '&e=' + encodeURIComponent(s.episodes[0].id) + '">' + (s.type === 'movie' ? 'Play movie' : 'Play first episode') + '</a></p>' : '') +
+            '</div>' +
+          '</section>' +
+          (s.type === 'movie' ? '' : '<section class="episodes"><h2>Episodes</h2>' + episodesHtml + '</section>');
+      }).catch(function (err) {
+        box.innerHTML = '<p class="empty">' + T.esc(err.message) + ' <a href="/">Back to the library</a></p>';
+      });
+
+      T.adStrip();
+    })();
+  </script>
+</body>
+</html>

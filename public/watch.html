@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>TDub - Watch</title>
+  <meta name="robots" content="index, follow" />
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <header class="site-header" id="site-header"></header>
+  <main class="wrap">
+    <div id="watch"><p class="empty">Loading the episode...</p></div>
+  </main>
+  <footer class="site-footer" id="site-footer"></footer>
+
+  <script src="/js/config.js"></script>
+  <script src="/js/common.js"></script>
+  <script>
+    (function () {
+      var T = window.TDub;
+      T.header('watch');
+      T.footer();
+      var seriesId = T.param('s');
+      var episodeId = T.param('e');
+      var box = document.getElementById('watch');
+      var QUALITY_ORDER = ['2160p', '1440p', '1080p', '720p', '480p', '360p'];
+
+      function fmt(sec) {
+        if (!isFinite(sec) || sec < 0) sec = 0;
+        var h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s = Math.floor(sec % 60);
+        var mm = (h ? String(m).padStart(2, '0') : String(m));
+        return (h ? h + ':' : '') + mm + ':' + String(s).padStart(2, '0');
+      }
+
+      if (!seriesId || !episodeId) {
+        box.innerHTML = '<p class="empty">No episode was picked. <a href="/">Go to the library</a></p>';
+        return;
+      }
+
+      T.api('/api/series/' + encodeURIComponent(seriesId)).then(function (data) {
+        var s = data.series;
+        var index = -1;
+        s.episodes.forEach(function (e, i) { if (e.id === episodeId) index = i; });
+        if (index === -1) throw new Error('That episode was not found.');
+        var ep = s.episodes[index];
+        var prev = s.episodes[index - 1];
+        var next = s.episodes[index + 1];
+        document.title = s.title + ' - TDub';
+
+        // Qualities that have a link, best first.
+        var qualities = QUALITY_ORDER.filter(function (q) { return ep.sources && ep.sources[q]; });
+        if (!qualities.length) throw new Error('This episode has no video links yet.');
+
+        var side = s.episodes.map(function (e) {
+          var thumb = e.thumbnail ? '<img src="' + T.esc(e.thumbnail) + '" alt="" loading="lazy" />' : '';
+          return '<a class="side-item' + (e.id === ep.id ? ' current' : '') + '" href="/watch.html?s=' + encodeURIComponent(s.id) + '&e=' + encodeURIComponent(e.id) + '">' +
+            '<div class="thumb">' + thumb + '</div>' +
+            '<div><div class="t">' + T.esc('S' + e.season + ' E' + e.number + ' - ' + (e.title || '')) + '</div>' +
+            '<div class="s">' + T.esc(e.duration || '') + '</div></div></a>';
+        }).join('');
+
+        box.innerHTML =
+          '<div class="watch-wrap">' +
+            '<div>' +
+              '<div class="player" id="player">' +
+                '<video id="video" playsinline preload="metadata"' + (ep.thumbnail ? ' poster="' + T.esc(ep.thumbnail) + '"' : '') + '></video>' +
+                '<div class="player-msg" id="msg"></div>' +
+                '<div class="player-bar">' +
+                  '<input class="seek" id="seek" type="range" min="0" max="1000" value="0" aria-label="Seek" />' +
+                  '<div class="controls">' +
+                    '<button class="ctrl" id="back" title="Back 10 seconds" aria-label="Back 10 seconds">&#x21BA;10</button>' +
+                    '<button class="ctrl" id="play" title="Play or pause" aria-label="Play or pause">&#9654;</button>' +
+                    '<button class="ctrl" id="fwd" title="Forward 10 seconds" aria-label="Forward 10 seconds">10&#x21BB;</button>' +
+                    '<span class="time" id="time">0:00 / 0:00</span>' +
+                    '<span class="spacer"></span>' +
+                    '<input class="vol" id="vol" type="range" min="0" max="1" step="0.05" value="1" aria-label="Volume" />' +
+                    '<select class="quality" id="quality" aria-label="Video quality"></select>' +
+                    '<button class="ctrl" id="full" title="Full screen" aria-label="Full screen">&#x26F6;</button>' +
+                  '</div>' +
+                '</div>' +
+              '</div>' +
+              '<div class="watch-info">' +
+                '<div class="meta"><a href="/title.html?id=' + encodeURIComponent(s.id) + '">' + T.esc(s.title) + '</a> - ' + (s.type === 'movie' ? 'Movie' : 'Season ' + T.esc(ep.season) + ', Episode ' + T.esc(ep.number)) + '</div>' +
+                '<h1>' + T.esc(ep.title || ('Episode ' + ep.number)) + '</h1>' +
+                '<div class="controls" style="margin-top:8px">' +
+                  (prev ? '<a class="btn ghost small" href="/watch.html?s=' + encodeURIComponent(s.id) + '&e=' + encodeURIComponent(prev.id) + '">&larr; Previous</a>' : '') +
+                  (next ? '<a class="btn small" href="/watch.html?s=' + encodeURIComponent(s.id) + '&e=' + encodeURIComponent(next.id) + '">Next episode &rarr;</a>' : '') +
+                '</div>' +
+                '<p class="desc">' + T.esc(ep.description || '') + '</p>' +
+              '</div>' +
+            '</div>' +
+            (s.type === 'movie' ? '' : '<aside class="side"><h2>More episodes</h2><div class="side-list">' + side + '</div></aside>') +
+          '</div>';
+
+        setupPlayer(ep, qualities, next, s);
+      }).catch(function (err) {
+        box.innerHTML = '<p class="empty">' + T.esc(err.message) + ' <a href="/">Back to the library</a></p>';
+      });
+
+      function setupPlayer(ep, qualities, next, s) {
+        var video = document.getElementById('video');
+        var player = document.getElementById('player');
+        var seek = document.getElementById('seek');
+        var time = document.getElementById('time');
+        var play = document.getElementById('play');
+        var vol = document.getElementById('vol');
+        var msg = document.getElementById('msg');
+        var sel = document.getElementById('quality');
+        var label = { '2160p': '4K (2160p)', '1440p': '1440p', '1080p': 'Full HD (1080p)', '720p': 'HD (720p)', '480p': 'SD (480p)', '360p': 'Low (360p)' };
+
+        sel.innerHTML = qualities.map(function (q) {
+          return '<option value="' + q + '">' + label[q] + '</option>';
+        }).join('');
+
+        // Remember the quality the viewer chose last time.
+        var saved = null;
+        try { saved = localStorage.getItem('tdub-quality'); } catch (e) {}
+        sel.value = qualities.indexOf(saved) !== -1 ? saved : qualities[0];
+
+        var current = sel.value;
+        var userSeeking = false;
+
+        function load(quality, keepPosition) {
+          var pos = keepPosition ? video.currentTime : 0;
+          var wasPlaying = keepPosition ? !video.paused : false;
+          current = quality;
+          video.src = ep.sources[quality];
+          video.addEventListener('loadedmetadata', function onMeta() {
+            video.removeEventListener('loadedmetadata', onMeta);
+            if (pos > 0 && isFinite(pos)) video.currentTime = pos;
+            if (wasPlaying || !keepPosition) video.play().catch(function () {});
+          });
+          video.load();
+        }
+
+        function showMsg(text) {
+          msg.textContent = text;
+          msg.classList.toggle('show', !!text);
+        }
+
+        load(current, false);
+
+        video.addEventListener('error', function () {
+          showMsg('This video could not be played in this quality. Try another quality from the menu.');
+        });
+        video.addEventListener('playing', function () { showMsg(''); });
+        video.addEventListener('waiting', function () { showMsg('Loading...'); });
+
+        sel.addEventListener('change', function () {
+          try { localStorage.setItem('tdub-quality', sel.value); } catch (e) {}
+          load(sel.value, true);
+        });
+
+        play.addEventListener('click', togglePlay);
+        video.addEventListener('click', togglePlay);
+        function togglePlay() {
+          if (video.paused) video.play().catch(function () {});
+          else video.pause();
+        }
+        video.addEventListener('play', function () { play.innerHTML = '&#10074;&#10074;'; });
+        video.addEventListener('pause', function () { play.innerHTML = '&#9654;'; });
+
+        document.getElementById('back').addEventListener('click', function () { video.currentTime = Math.max(0, video.currentTime - 10); });
+        document.getElementById('fwd').addEventListener('click', function () { video.currentTime = Math.min(video.duration || 0, video.currentTime + 10); });
+
+        seek.addEventListener('input', function () { userSeeking = true; });
+        seek.addEventListener('change', function () {
+          if (video.duration) video.currentTime = (seek.value / 1000) * video.duration;
+          userSeeking = false;
+        });
+
+        video.addEventListener('timeupdate', function () {
+          var d = video.duration || 0;
+          if (!userSeeking) seek.value = d ? Math.round((video.currentTime / d) * 1000) : 0;
+          time.textContent = fmt(video.currentTime) + ' / ' + fmt(d);
+        });
+
+        vol.addEventListener('input', function () { video.volume = Number(vol.value); });
+
+        document.getElementById('full').addEventListener('click', function () {
+          if (document.fullscreenElement) document.exitFullscreen();
+          else (player.requestFullscreen ? player.requestFullscreen() : video.requestFullscreen()).catch(function () {});
+        });
+
+        // Keyboard: space = play/pause, arrows = seek 5 seconds, F = full screen.
+        document.addEventListener('keydown', function (e) {
+          if (/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName)) return;
+          if (e.code === 'Space') { e.preventDefault(); togglePlay(); }
+          else if (e.key === 'ArrowRight') video.currentTime = Math.min(video.duration || 0, video.currentTime + 5);
+          else if (e.key === 'ArrowLeft') video.currentTime = Math.max(0, video.currentTime - 5);
+          else if (e.key === 'f' || e.key === 'F') document.getElementById('full').click();
+        });
+
+        // Controls hide after 3 seconds of no movement while playing.
+        var idleTimer = null;
+        function wake() {
+          player.classList.remove('idle');
+          clearTimeout(idleTimer);
+          idleTimer = setTimeout(function () { if (!video.paused) player.classList.add('idle'); }, 3000);
+        }
+        player.addEventListener('mousemove', wake);
+        player.addEventListener('touchstart', wake);
+        video.addEventListener('pause', function () { player.classList.remove('idle'); clearTimeout(idleTimer); });
+
+        video.addEventListener('ended', function () {
+          if (next) window.location.href = '/watch.html?s=' + encodeURIComponent(s.id) + '&e=' + encodeURIComponent(next.id);
+        });
+      }
+
+      T.adStrip();
+    })();
+  </script>
+</body>
+</html>

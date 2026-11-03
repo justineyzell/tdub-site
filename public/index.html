@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>TDub - Watch series and episodes</title>
+  <meta name="description" content="TDub is a place to watch series and episodes, in good quality, right in your browser." />
+  <meta property="og:title" content="TDub" />
+  <meta property="og:description" content="Watch series and episodes on TDub." />
+  <meta property="og:type" content="website" />
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <header class="site-header" id="site-header"></header>
+  <main>
+    <section class="hero" id="hero" hidden>
+      <div class="hero-body">
+        <h1 id="hero-title"></h1>
+        <p id="hero-desc"></p>
+        <a class="btn" id="hero-btn" href="/">Watch now</a>
+      </div>
+    </section>
+    <div class="wrap" id="shelves">
+      <p class="empty">Loading the library...</p>
+    </div>
+  </main>
+  <footer class="site-footer" id="site-footer"></footer>
+
+  <script src="/js/config.js"></script>
+  <script src="/js/common.js"></script>
+  <script>
+    (function () {
+      var T = window.TDub;
+      T.header('home');
+      T.footer();
+      var q = T.param('q').toLowerCase();
+
+      function card(s) {
+        var poster = s.poster
+          ? '<img src="' + T.esc(s.poster) + '" alt="" loading="lazy" />'
+          : '';
+        return '<a class="card" href="/title.html?id=' + encodeURIComponent(s.id) + '">' +
+          '<div class="poster">' + poster + '</div>' +
+          '<div class="info"><div class="name">' + T.esc(s.title) + '</div>' +
+          '<div class="meta">' + T.esc([s.year, s.genres.slice(0, 2).join(', ')].filter(Boolean).join(' - ')) + '</div>' +
+          '</div></a>';
+      }
+
+      function shelf(title, list) {
+        if (!list.length) return '';
+        return '<section class="shelf"><h2>' + T.esc(title) + '</h2><div class="row">' +
+          list.map(card).join('') + '</div></section>';
+      }
+
+      T.api('/api/library').then(function (data) {
+        var all = data.series || [];
+        var shelves = document.getElementById('shelves');
+
+        if (q) {
+          var found = all.filter(function (s) {
+            return (s.title + ' ' + s.genres.join(' ') + ' ' + (s.description || '')).toLowerCase().indexOf(q) !== -1;
+          });
+          shelves.innerHTML = '<section class="shelf"><h2>Results for "' + T.esc(q) + '"</h2>' +
+            (found.length ? '<div class="grid">' + found.map(card).join('') + '</div>'
+              : '<p class="empty">Nothing matched. Try another word.</p>') + '</section>';
+          return;
+        }
+
+        if (!all.length) {
+          shelves.innerHTML = '<p class="empty">The library is empty for now. Please check back soon.</p>';
+          return;
+        }
+
+        // The big banner uses the first featured series, or the newest one.
+        var top = all.filter(function (s) { return s.featured; })[0] || all[0];
+        var hero = document.getElementById('hero');
+        hero.hidden = false;
+        if (top.backdrop || top.poster) hero.style.backgroundImage = 'url("' + (top.backdrop || top.poster).replace(/"/g, '%22') + '")';
+        document.getElementById('hero-title').textContent = top.title;
+        document.getElementById('hero-desc').textContent = top.description || '';
+        document.getElementById('hero-btn').href = '/title.html?id=' + encodeURIComponent(top.id);
+
+        var genres = {};
+        all.forEach(function (s) { s.genres.forEach(function (g) { genres[g] = true; }); });
+
+        var html = '';
+        html += shelf('New on TDub', all.slice(0, 12));
+        html += shelf('Movies', all.filter(function (s) { return s.type === 'movie'; }));
+        html += shelf('Featured', all.filter(function (s) { return s.featured; }));
+        Object.keys(genres).sort().forEach(function (g) {
+          html += shelf(g, all.filter(function (s) { return s.genres.indexOf(g) !== -1; }));
+        });
+        html += shelf('All series', all.filter(function (s) { return s.type !== 'movie'; }));
+        shelves.innerHTML = html;
+      }).catch(function (err) {
+        document.getElementById('shelves').innerHTML = '<p class="empty">' + T.esc(err.message) + '</p>';
+      });
+
+      T.adStrip();
+    })();
+  </script>
+</body>
+</html>

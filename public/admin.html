@@ -1,0 +1,458 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>TDub - Admin</title>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <header class="site-header" id="site-header">
+    <a class="logo" href="/">T<span>Dub</span></a>
+    <span class="meta" style="color:var(--muted)">Admin</span>
+    <button class="btn ghost small hidden" id="logout" style="margin-left:auto">Log out</button>
+  </header>
+
+  <main class="wrap">
+    <!-- Login -->
+    <section id="login-view" class="login-box panel hidden">
+      <h2>Admin log in</h2>
+      <div class="field">
+        <label for="pw">Admin password</label>
+        <input id="pw" type="password" autocomplete="current-password" />
+      </div>
+      <button class="btn" id="login-btn">Log in</button>
+      <div class="msg error" id="login-msg"></div>
+    </section>
+
+    <!-- Manager -->
+    <section id="admin-view" class="admin-wrap hidden">
+      <aside>
+        <div class="panel">
+          <h2>Series</h2>
+          <button class="btn small" id="new-series">+ New series</button>
+          <div id="series-list" style="margin-top:12px"></div>
+        </div>
+        <div class="panel" style="margin-top:18px">
+          <h2>Movies</h2>
+          <button class="btn small" id="new-movie">+ New movie</button>
+          <div id="movie-list" style="margin-top:12px"></div>
+        </div>
+      </aside>
+
+      <div>
+        <!-- Movie form -->
+        <div class="panel" id="movie-panel" hidden>
+          <h2 id="movie-heading">New movie</h2>
+          <form id="movie-form">
+            <input type="hidden" id="m-id" />
+            <div class="field"><label for="m-title">Title *</label><input id="m-title" maxlength="120" required /></div>
+            <div class="field"><label for="m-desc">Description</label><textarea id="m-desc" maxlength="2000"></textarea></div>
+            <div class="two">
+              <div class="field"><label for="m-year">Year</label><input id="m-year" type="number" min="1900" max="2100" /></div>
+              <div class="field"><label for="m-duration">Length</label><input id="m-duration" placeholder="1 h 48 min" maxlength="20" /></div>
+            </div>
+            <div class="field"><label for="m-genres">Genres</label><input id="m-genres" placeholder="Action, Comedy" /><span class="hint">Separate with commas. Up to 6.</span></div>
+            <div class="field"><label for="m-poster">Poster picture link (https://...)</label><input id="m-poster" type="url" /><span class="hint">Tall picture works best.</span></div>
+            <div class="field"><label for="m-backdrop">Wide banner link (https://...)</label><input id="m-backdrop" type="url" /><span class="hint">Wide picture for the top of the home page.</span></div>
+            <label class="field" style="flex-direction:row;align-items:center;gap:8px"><input type="checkbox" id="m-featured" style="width:auto" /> Show in the big banner on the home page</label>
+            <p class="hint" style="color:var(--muted);font-size:0.85rem">Paste the movie video links from your cloud storage. Use direct links that end in .mp4 or .webm. Add one link per quality you have. The viewer picks the quality.</p>
+            <div class="two">
+              <div class="field"><label for="m-v-2160p">4K (2160p) link</label><input id="m-v-2160p" type="url" /></div>
+              <div class="field"><label for="m-v-1440p">1440p link</label><input id="m-v-1440p" type="url" /></div>
+              <div class="field"><label for="m-v-1080p">Full HD (1080p) link</label><input id="m-v-1080p" type="url" /></div>
+              <div class="field"><label for="m-v-720p">HD (720p) link</label><input id="m-v-720p" type="url" /></div>
+              <div class="field"><label for="m-v-480p">SD (480p) link</label><input id="m-v-480p" type="url" /></div>
+              <div class="field"><label for="m-v-360p">Low (360p) link</label><input id="m-v-360p" type="url" /></div>
+            </div>
+            <div class="row-actions">
+              <button class="btn" type="submit">Save movie</button>
+              <button class="btn danger small hidden" type="button" id="m-delete">Delete movie</button>
+            </div>
+            <div class="msg" id="movie-msg"></div>
+          </form>
+        </div>
+
+        <!-- Series form -->
+        <div class="panel" id="series-panel">
+          <h2 id="series-heading">New series</h2>
+          <form id="series-form">
+            <input type="hidden" id="s-id" />
+            <div class="field"><label for="s-title">Title *</label><input id="s-title" maxlength="120" required /></div>
+            <div class="field"><label for="s-desc">Description</label><textarea id="s-desc" maxlength="2000"></textarea></div>
+            <div class="two">
+              <div class="field"><label for="s-year">Year</label><input id="s-year" type="number" min="1900" max="2100" /></div>
+              <div class="field"><label for="s-genres">Genres</label><input id="s-genres" placeholder="Drama, Action" /><span class="hint">Separate with commas. Up to 6.</span></div>
+            </div>
+            <div class="field"><label for="s-poster">Poster picture link (https://...)</label><input id="s-poster" type="url" /><span class="hint">Picture link from your cloud storage. Tall picture works best.</span></div>
+            <div class="field"><label for="s-backdrop">Wide banner link (https://...)</label><input id="s-backdrop" type="url" /><span class="hint">Wide picture for the top of the home page.</span></div>
+            <label class="field" style="flex-direction:row;align-items:center;gap:8px"><input type="checkbox" id="s-featured" style="width:auto" /> Show in the big banner on the home page</label>
+            <div class="row-actions">
+              <button class="btn" type="submit">Save series</button>
+              <button class="btn danger small hidden" type="button" id="s-delete">Delete series</button>
+            </div>
+            <div class="msg" id="series-msg"></div>
+          </form>
+        </div>
+
+        <!-- Episode form -->
+        <div class="panel" id="episode-panel" style="margin-top:18px" hidden>
+          <h2 id="episode-heading">Add an episode</h2>
+          <form id="episode-form">
+            <input type="hidden" id="e-id" />
+            <div class="two">
+              <div class="field"><label for="e-season">Season *</label><input id="e-season" type="number" min="1" max="99" value="1" required /></div>
+              <div class="field"><label for="e-number">Episode number *</label><input id="e-number" type="number" min="1" max="9999" required /></div>
+            </div>
+            <div class="two">
+              <div class="field"><label for="e-title">Episode title</label><input id="e-title" maxlength="150" /></div>
+              <div class="field"><label for="e-duration">Length</label><input id="e-duration" placeholder="42 min" maxlength="20" /></div>
+            </div>
+            <div class="field"><label for="e-desc">Description</label><textarea id="e-desc" maxlength="1000"></textarea></div>
+            <div class="field"><label for="e-thumb">Thumbnail picture link (optional)</label><input id="e-thumb" type="url" /></div>
+            <p class="hint" style="color:var(--muted);font-size:0.85rem">Paste the video links from your cloud storage. Use direct links that end in .mp4 or .webm. Add one link per quality you have. The viewer picks the quality.</p>
+            <div class="two">
+              <div class="field"><label for="v-2160p">4K (2160p) link</label><input id="v-2160p" type="url" /></div>
+              <div class="field"><label for="v-1440p">1440p link</label><input id="v-1440p" type="url" /></div>
+              <div class="field"><label for="v-1080p">Full HD (1080p) link</label><input id="v-1080p" type="url" /></div>
+              <div class="field"><label for="v-720p">HD (720p) link</label><input id="v-720p" type="url" /></div>
+              <div class="field"><label for="v-480p">SD (480p) link</label><input id="v-480p" type="url" /></div>
+              <div class="field"><label for="v-360p">Low (360p) link</label><input id="v-360p" type="url" /></div>
+            </div>
+            <div class="row-actions">
+              <button class="btn" type="submit">Save episode</button>
+              <button class="btn ghost small" type="button" id="e-clear">Clear form</button>
+            </div>
+            <div class="msg" id="episode-msg"></div>
+          </form>
+        </div>
+
+        <!-- Episodes of the chosen series -->
+        <div class="panel" id="episodes-panel" style="margin-top:18px" hidden>
+          <div class="row-actions" style="justify-content:space-between;margin-bottom:12px">
+            <h2 style="margin:0">Episodes</h2>
+            <button class="btn small" id="add-episode">+ Add episode</button>
+          </div>
+          <div id="episode-list"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer" id="site-footer"></footer>
+
+  <script src="/js/common.js"></script>
+  <script>
+    (function () {
+      var T = window.TDub;
+      T.footer();
+      var QUALITIES = ['2160p', '1440p', '1080p', '720p', '480p', '360p'];
+      var loginView = document.getElementById('login-view');
+      var adminView = document.getElementById('admin-view');
+      var logoutBtn = document.getElementById('logout');
+      var all = [];
+      var current = null; // the series being edited
+      var currentMovie = null; // the movie being edited
+
+      function $(id) { return document.getElementById(id); }
+      function setMsg(el, text, ok) { el.textContent = text || ''; el.className = 'msg ' + (text ? (ok ? 'ok' : 'error') : ''); }
+      function val(id) { return $(id).value.trim(); }
+
+      function showLogin() {
+        adminView.classList.add('hidden');
+        logoutBtn.classList.add('hidden');
+        loginView.classList.remove('hidden');
+        $('pw').focus();
+      }
+      function showAdmin() {
+        loginView.classList.add('hidden');
+        adminView.classList.remove('hidden');
+        logoutBtn.classList.remove('hidden');
+        loadSeries();
+      }
+
+      $('login-btn').addEventListener('click', doLogin);
+      $('pw').addEventListener('keydown', function (e) { if (e.key === 'Enter') doLogin(); });
+      function doLogin() {
+        setMsg($('login-msg'), '');
+        T.api('/api/admin/login', { method: 'POST', body: { password: $('pw').value } })
+          .then(function () { $('pw').value = ''; showAdmin(); })
+          .catch(function (err) { setMsg($('login-msg'), err.message); });
+      }
+      logoutBtn.addEventListener('click', function () {
+        T.api('/api/admin/logout', { method: 'POST' }).finally(function () { showLogin(); });
+      });
+
+      function loadSeries() {
+        T.api('/api/admin/series').then(function (data) {
+          all = data.series;
+          renderList();
+          if (current) {
+            var still = all.filter(function (s) { return s.id === current.id; })[0];
+            if (still) selectSeries(still.id, false); else resetForms();
+          }
+          if (currentMovie) {
+            var stillMovie = all.filter(function (s) { return s.id === currentMovie.id; })[0];
+            if (stillMovie) selectMovie(stillMovie.id); else resetMovieForm();
+          }
+        }).catch(function (err) {
+          if (err.status === 401) showLogin(); else setMsg($('series-msg'), err.message);
+        });
+      }
+
+      function renderList() {
+        renderMovieList();
+        var html = all.filter(function (s) { return s.type !== 'movie'; }).map(function (s) {
+          return '<div class="list-item"><div><div class="name">' + T.esc(s.title) + '</div>' +
+            '<div class="sub">' + s.episodes.length + ' episode(s)' + (s.featured ? ' - banner' : '') + '</div></div>' +
+            '<button class="btn ghost small" data-pick="' + T.esc(s.id) + '">Open</button></div>';
+        }).join('');
+        $('series-list').innerHTML = html || '<p class="hint" style="color:var(--muted)">No series yet. Click "New series".</p>';
+        Array.prototype.forEach.call(document.querySelectorAll('[data-pick]'), function (b) {
+          b.addEventListener('click', function () { selectSeries(b.getAttribute('data-pick'), true); });
+        });
+      }
+
+      function resetForms() {
+        current = null;
+        $('series-form').reset();
+        $('s-id').value = '';
+        $('series-heading').textContent = 'New series';
+        $('s-delete').classList.add('hidden');
+        $('episode-panel').hidden = true;
+        $('episodes-panel').hidden = true;
+        setMsg($('series-msg'), '');
+        closeMovieArea();
+      }
+
+      $('new-series').addEventListener('click', function () { resetForms(); $('s-title').focus(); });
+
+      // ---- Movies ----
+      function renderMovieList() {
+        var movies = all.filter(function (s) { return s.type === 'movie'; });
+        $('movie-list').innerHTML = movies.map(function (m) {
+          return '<div class="list-item"><div><div class="name">' + T.esc(m.title) + '</div>' +
+            '<div class="sub">Movie' + (m.featured ? ' - banner' : '') + '</div></div>' +
+            '<button class="btn ghost small" data-pick-movie="' + T.esc(m.id) + '">Open</button></div>';
+        }).join('') || '<p class="hint" style="color:var(--muted)">No movies yet. Click "+ New movie".</p>';
+        Array.prototype.forEach.call(document.querySelectorAll('[data-pick-movie]'), function (b) {
+          b.addEventListener('click', function () { selectMovie(b.getAttribute('data-pick-movie')); });
+        });
+      }
+
+      function showMovieArea() {
+        $('series-panel').hidden = true;
+        $('episode-panel').hidden = true;
+        $('episodes-panel').hidden = true;
+        $('movie-panel').hidden = false;
+      }
+
+      function closeMovieArea() {
+        currentMovie = null;
+        $('movie-panel').hidden = true;
+        $('series-panel').hidden = false;
+      }
+
+      function resetMovieForm() {
+        currentMovie = null;
+        $('movie-form').reset();
+        $('m-id').value = '';
+        $('movie-heading').textContent = 'New movie';
+        $('m-delete').classList.add('hidden');
+        showMovieArea();
+      }
+
+      function selectMovie(id) {
+        var m = all.filter(function (x) { return x.id === id && x.type === 'movie'; })[0];
+        if (!m) return resetMovieForm();
+        current = null;
+        currentMovie = m;
+        var src = (m.episodes && m.episodes[0] && m.episodes[0].sources) || {};
+        $('m-id').value = m.id;
+        $('m-title').value = m.title;
+        $('m-desc').value = m.description || '';
+        $('m-year').value = m.year || '';
+        $('m-duration').value = m.duration || '';
+        $('m-genres').value = (m.genres || []).join(', ');
+        $('m-poster').value = m.poster || '';
+        $('m-backdrop').value = m.backdrop || '';
+        $('m-featured').checked = !!m.featured;
+        QUALITIES.forEach(function (q) { $('m-v-' + q).value = src[q] || ''; });
+        $('movie-heading').textContent = 'Edit movie: ' + m.title;
+        $('m-delete').classList.remove('hidden');
+        showMovieArea();
+        $('movie-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+
+      $('new-movie').addEventListener('click', function () {
+        current = null;
+        resetMovieForm();
+        $('m-title').focus();
+      });
+
+      $('movie-form').addEventListener('submit', function (e) {
+        e.preventDefault();
+        var sources = {};
+        QUALITIES.forEach(function (q) { sources[q] = val('m-v-' + q); });
+        var body = {
+          id: val('m-id') || undefined,
+          title: val('m-title'),
+          description: val('m-desc'),
+          year: val('m-year'),
+          duration: val('m-duration'),
+          genres: val('m-genres'),
+          poster: val('m-poster'),
+          backdrop: val('m-backdrop'),
+          featured: $('m-featured').checked,
+          sources: sources,
+        };
+        T.api('/api/admin/movies', { method: 'POST', body: body }).then(function (data) {
+          setMsg($('movie-msg'), 'Movie saved.', true);
+          currentMovie = { id: data.movie.id };
+          $('m-id').value = data.movie.id;
+          $('m-delete').classList.remove('hidden');
+          loadSeries();
+        }).catch(function (err) { setMsg($('movie-msg'), err.message); });
+      });
+
+      $('m-delete').addEventListener('click', function () {
+        if (!currentMovie) return;
+        if (!confirm('Delete the movie "' + $('m-title').value + '"? This cannot be undone.')) return;
+        T.api('/api/admin/series/' + encodeURIComponent(currentMovie.id), { method: 'DELETE' }).then(function () {
+          resetMovieForm();
+          loadSeries();
+        }).catch(function (err) { setMsg($('movie-msg'), err.message); });
+      });
+
+      function selectSeries(id, scroll) {
+        T.api('/api/admin/series').then(function (data) {
+          all = data.series;
+          var s = all.filter(function (x) { return x.id === id; })[0];
+          if (!s) return resetForms();
+          closeMovieArea();
+          current = s;
+          $('s-id').value = s.id;
+          $('s-title').value = s.title;
+          $('s-desc').value = s.description || '';
+          $('s-year').value = s.year || '';
+          $('s-genres').value = (s.genres || []).join(', ');
+          $('s-poster').value = s.poster || '';
+          $('s-backdrop').value = s.backdrop || '';
+          $('s-featured').checked = !!s.featured;
+          $('series-heading').textContent = 'Edit: ' + s.title;
+          $('s-delete').classList.remove('hidden');
+          setMsg($('series-msg'), '');
+          $('episodes-panel').hidden = false;
+          renderEpisodes();
+          if (scroll) window.scrollTo({ top: 0, behavior: 'smooth' });
+        }).catch(function (err) { setMsg($('series-msg'), err.message); });
+      }
+
+      $('series-form').addEventListener('submit', function (e) {
+        e.preventDefault();
+        var body = {
+          id: val('s-id') || undefined,
+          title: val('s-title'),
+          description: val('s-desc'),
+          year: val('s-year'),
+          genres: val('s-genres'),
+          poster: val('s-poster'),
+          backdrop: val('s-backdrop'),
+          featured: $('s-featured').checked,
+        };
+        T.api('/api/admin/series', { method: 'POST', body: body }).then(function (data) {
+          setMsg($('series-msg'), 'Saved.', true);
+          loadSeries();
+          selectSeries(data.series.id, false);
+          $('episode-panel').hidden = true;
+        }).catch(function (err) { setMsg($('series-msg'), err.message); });
+      });
+
+      $('s-delete').addEventListener('click', function () {
+        if (!current) return;
+        if (!confirm('Delete "' + current.title + '" and all its episode links? This cannot be undone.')) return;
+        T.api('/api/admin/series/' + encodeURIComponent(current.id), { method: 'DELETE' }).then(function () {
+          resetForms();
+          loadSeries();
+        }).catch(function (err) { setMsg($('series-msg'), err.message); });
+      });
+
+      function renderEpisodes() {
+        var eps = current ? current.episodes : [];
+        if (!eps.length) {
+          $('episode-list').innerHTML = '<p class="hint" style="color:var(--muted)">No episodes yet.</p>';
+          return;
+        }
+        $('episode-list').innerHTML = eps.map(function (ep) {
+          var q = QUALITIES.filter(function (k) { return ep.sources && ep.sources[k]; }).join(', ');
+          return '<div class="list-item"><div><div class="name">S' + ep.season + ' E' + ep.number + ' - ' + T.esc(ep.title || '') + '</div>' +
+            '<div class="sub">Qualities: ' + T.esc(q) + '</div></div>' +
+            '<div class="row-actions"><button class="btn ghost small" data-edit="' + T.esc(ep.id) + '">Edit</button>' +
+            '<button class="btn danger small" data-del="' + T.esc(ep.id) + '">Delete</button></div></div>';
+        }).join('');
+        Array.prototype.forEach.call(document.querySelectorAll('[data-edit]'), function (b) {
+          b.addEventListener('click', function () {
+            var ep = current.episodes.filter(function (x) { return x.id === b.getAttribute('data-edit'); })[0];
+            openEpisode(ep);
+          });
+        });
+        Array.prototype.forEach.call(document.querySelectorAll('[data-del]'), function (b) {
+          b.addEventListener('click', function () {
+            if (!confirm('Delete this episode?')) return;
+            T.api('/api/admin/series/' + encodeURIComponent(current.id) + '/episodes/' + encodeURIComponent(b.getAttribute('data-del')), { method: 'DELETE' })
+              .then(function () { selectSeries(current.id, false); })
+              .catch(function (err) { alert(err.message); });
+          });
+        });
+      }
+
+      function openEpisode(ep) {
+        $('episode-panel').hidden = false;
+        $('e-id').value = ep ? ep.id : '';
+        $('e-season').value = ep ? ep.season : (current.episodes.length ? current.episodes[current.episodes.length - 1].season : 1);
+        $('e-number').value = ep ? ep.number : '';
+        $('e-title').value = ep ? (ep.title || '') : '';
+        $('e-duration').value = ep ? (ep.duration || '') : '';
+        $('e-desc').value = ep ? (ep.description || '') : '';
+        $('e-thumb').value = ep ? (ep.thumbnail || '') : '';
+        QUALITIES.forEach(function (q) { $('v-' + q).value = ep && ep.sources ? (ep.sources[q] || '') : ''; });
+        $('episode-heading').textContent = ep ? 'Edit episode ' + ep.number : 'Add an episode to ' + current.title;
+        setMsg($('episode-msg'), '');
+        $('episode-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+
+      $('add-episode').addEventListener('click', function () { openEpisode(null); });
+      $('e-clear').addEventListener('click', function () { openEpisode(null); });
+
+      $('episode-form').addEventListener('submit', function (e) {
+        e.preventDefault();
+        if (!current) return;
+        var sources = {};
+        QUALITIES.forEach(function (q) { sources[q] = val('v-' + q); });
+        var body = {
+          id: val('e-id') || undefined,
+          season: val('e-season'),
+          number: val('e-number'),
+          title: val('e-title'),
+          duration: val('e-duration'),
+          description: val('e-desc'),
+          thumbnail: val('e-thumb'),
+          sources: sources,
+        };
+        T.api('/api/admin/series/' + encodeURIComponent(current.id) + '/episodes', { method: 'POST', body: body })
+          .then(function () {
+            setMsg($('episode-msg'), 'Episode saved.', true);
+            var id = current.id;
+            selectSeries(id, false);
+            setTimeout(function () { $('episode-panel').hidden = true; }, 600);
+          })
+          .catch(function (err) { setMsg($('episode-msg'), err.message); });
+      });
+
+      // Start: check whether the admin is already logged in.
+      T.api('/api/admin/session').then(showAdmin).catch(showLogin);
+    })();
+  </script>
+</body>
+</html>

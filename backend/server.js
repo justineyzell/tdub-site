@@ -16,6 +16,7 @@ require('dotenv').config();
 
 const crypto = require('crypto');
 const express = require('express');
+const path = require('path');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -252,6 +253,10 @@ const asyncRoute = (fn) => (req, res, next) => Promise.resolve(fn(req, res, next
 const app = express();
 app.set('trust proxy', 1); // behind Render / Railway / Koyeb proxies
 app.disable('x-powered-by');
+
+// Optional: also serve the frontend files (http://localhost:3000/admin.html).
+// Placed before helmet so its strict security headers don't block the Tailwind CDN.
+app.use(express.static(path.join(__dirname, '../frontend')));
 
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 app.use(

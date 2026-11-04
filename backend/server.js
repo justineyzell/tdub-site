@@ -263,6 +263,9 @@ app.disable('x-powered-by');
 // Optional: also serve the frontend files (http://localhost:3000/admin.html).
 // Placed before helmet so its strict security headers don't block the Tailwind CDN.
 app.use(express.static(path.join(__dirname, '../frontend')));
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, '../frontend/index.html'));
+});
 
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 app.use(
@@ -440,7 +443,6 @@ app.delete(
 
 // Unknown API routes.
 app.use('/api', (req, res) => res.status(404).json({ error: 'Not found' }));
-app.get('/', (req, res) => res.json({ name: 'TDub API', health: '/api/health' }));
 
 // Central error handler.
 // eslint-disable-next-line no-unused-vars

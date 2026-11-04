@@ -224,9 +224,9 @@
   </template>
   <!-- Library: one movie row -->
   <template id="movieItemTpl">
-    <li class="flex items-center gap-3 bg-panel rounded-lg p-3 ring-1 ring-white/5">
+    <li class="flex flex-wrap items-center gap-3 bg-panel rounded-lg p-3 ring-1 ring-white/5">
       <img class="item-poster w-10 h-14 object-cover rounded bg-black flex-none" alt="" loading="lazy" />
-      <div class="min-w-0 flex-1">
+      <div class="min-w-[9rem] flex-1">
         <p class="item-title font-semibold truncate"></p>
         <p class="item-meta text-xs text-gray-500 truncate"></p>
       </div>
@@ -238,9 +238,10 @@
   <!-- Library: one series card with episodes + inline add-episode form -->
   <template id="seriesItemTpl">
     <li class="bg-panel rounded-lg ring-1 ring-white/5 overflow-hidden">
-      <div class="flex items-center gap-3 p-3">
+      <div class="flex flex-wrap items-center gap-3 p-3">
         <img class="item-poster w-10 h-14 object-cover rounded bg-black flex-none" alt="" loading="lazy" />
-        <button type="button" class="toggle-episodes min-w-0 flex-1 text-left">
+        <!-- min width keeps the title readable on phones; the buttons wrap below it -->
+        <button type="button" class="toggle-episodes min-w-[9rem] flex-1 text-left">
           <p class="item-title font-semibold truncate"></p>
           <p class="item-meta text-xs text-gray-500 truncate"></p>
         </button>

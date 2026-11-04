@@ -1,0 +1,13 @@
+{
+  "name": "tdub",
+  "version": "1.0.0",
+  "private": true,
+  "description": "TDub - a streaming website with a library, a built-in player and a private upload page",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

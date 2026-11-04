@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en" class="bg-[#0b0b10]">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin — TDub</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <meta name="theme-color" content="#0b0b10" />
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: { extend: { colors: { brand: { DEFAULT: '#e11d48', dark: '#be123c' }, ink: '#0b0b10', panel: '#15151d' } } },
+    };
+  </script>
+  <link rel="stylesheet" href="/styles.css" />
+  <style>
+    .field { width: 100%; background: rgba(0,0,0,.45); border: 1px solid rgba(255,255,255,.12); border-radius: .375rem; padding: .55rem .75rem; font-size: .875rem; color: #f3f4f6; }
+    .field:focus { outline: none; border-color: #e11d48; box-shadow: 0 0 0 1px #e11d48; }
+    .field::placeholder { color: #6b7280; }
+    .label { display: block; font-size: .75rem; font-weight: 600; color: #9ca3af; margin-bottom: .35rem; text-transform: uppercase; letter-spacing: .04em; }
+  </style>
+</head>
+<body class="bg-ink text-gray-100 antialiased min-h-screen">
+
+  <header class="border-b border-white/5 bg-ink/95 sticky top-0 z-30 backdrop-blur">
+    <div class="max-w-5xl mx-auto px-4 h-14 flex items-center gap-4">
+      <a href="/" class="text-2xl font-black tracking-wider">T<span class="text-brand">DUB</span></a>
+      <span class="text-xs uppercase tracking-widest text-gray-500">Admin</span>
+      <button id="logoutBtn" type="button" class="hidden ml-auto text-sm text-gray-400 hover:text-white">Log out</button>
+    </div>
+  </header>
+
+  <!-- Login -->
+  <section id="loginView" class="max-w-sm mx-auto mt-24 px-4">
+    <form id="loginForm" class="bg-panel rounded-xl p-6 ring-1 ring-white/5 shadow-xl" autocomplete="off">
+      <h1 class="text-xl font-bold">Admin login</h1>
+      <p class="text-sm text-gray-400 mt-1">Enter the TDub admin password.</p>
+      <label class="label mt-5" for="passwordInput">Password</label>
+      <input id="passwordInput" type="password" class="field" required autocomplete="current-password" />
+      <label class="mt-3 flex items-center gap-2 text-sm text-gray-400">
+        <input id="rememberMe" type="checkbox" class="accent-rose-600" /> Keep me signed in on this device
+      </label>
+      <p id="loginError" class="hidden mt-3 text-sm text-red-400"></p>
+      <button id="loginBtn" type="submit" class="mt-5 w-full bg-brand hover:bg-brand-dark rounded-md py-2.5 font-semibold transition disabled:opacity-60">Unlock</button>
+    </form>
+  </section>
+
+  <!-- Upload dashboard -->
+  <main id="adminView" class="hidden max-w-5xl mx-auto px-4 py-8">
+    <div class="flex items-center justify-between flex-wrap gap-3">
+      <h1 class="text-2xl font-bold">Upload new title</h1>
+      <a href="/" class="text-sm text-gray-400 hover:text-white">View site ↗</a>
+    </div>
+
+    <form id="uploadForm" class="mt-6 space-y-6" novalidate>
+
+      <!-- Type toggle -->
+      <div class="bg-panel rounded-xl p-5 ring-1 ring-white/5">
+        <span class="label">Content type</span>
+        <div class="inline-flex rounded-lg bg-black/40 p-1 ring-1 ring-white/10" role="radiogroup" aria-label="Content type">
+          <label class="cursor-pointer">
+            <input type="radio" name="type" value="movie" class="peer sr-only" checked />
+            <span class="block px-5 py-2 rounded-md text-sm font-semibold text-gray-400 peer-checked:bg-brand peer-checked:text-white transition">🎬 Movie</span>
+          </label>
+          <label class="cursor-pointer">
+            <input type="radio" name="type" value="series" class="peer sr-only" />
+            <span class="block px-5 py-2 rounded-md text-sm font-semibold text-gray-400 peer-checked:bg-brand peer-checked:text-white transition">📺 Series</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Details -->
+      <div class="bg-panel rounded-xl p-5 ring-1 ring-white/5 grid gap-5 md:grid-cols-[1fr_180px]">
+        <div class="space-y-4">
+          <div>
+            <label class="label" for="title">Title *</label>
+            <input id="title" name="title" class="field" required maxlength="200" placeholder="e.g. Jujutsu Kaisen (English Dub)" />
+          </div>
+          <div>
+            <label class="label" for="description">Description</label>
+            <textarea id="description" name="description" rows="4" maxlength="5000" class="field" placeholder="Short synopsis…"></textarea>
+          </div>
+          <div>
+            <label class="label" for="posterUrl">Poster image URL</label>
+            <input id="posterUrl" name="posterUrl" type="url" class="field" placeholder="https://image.tmdb.org/t/p/w500/... or https://i.ibb.co/..." />
+            <p class="text-xs text-gray-500 mt-1">Direct image link from TMDB, ImgBB, etc. Preview appears on the right.</p>
+          </div>
+          <div class="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label class="label" for="genre">Genres (comma-separated)</label>
+              <input id="genre" name="genre" class="field" placeholder="Anime, Dub, Action" />
+              <p class="text-xs text-gray-500 mt-1">Tip: add “Anime” or “Dub” to show in those home rows.</p>
+            </div>
+            <div>
+              <label class="label" for="qualityBadge">Quality badge</label>
+              <select id="qualityBadge" name="qualityBadge" class="field">
+                <option value="HD">HD</option>
+                <option value="4K">4K</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div>
+          <span class="label">Preview</span>
+          <img id="posterPreview" src="/assets/placeholder-poster.svg" alt="Poster preview"
+            class="w-full aspect-[2/3] object-cover rounded-md ring-1 ring-white/10 bg-black" />
+          <p id="posterStatus" class="text-xs text-gray-500 mt-1"></p>
+        </div>
+      </div>
+
+      <!-- Movie sources -->
+      <div id="movieSection" class="bg-panel rounded-xl p-5 ring-1 ring-white/5">
+        <div class="flex items-center justify-between gap-3">
+          <div>
+            <h2 class="font-semibold">Video sources</h2>
+            <p class="text-xs text-gray-500">First row is the primary (Abyss) link. Add backup mirrors below.</p>
+          </div>
+          <button type="button" id="addMovieSource" class="text-sm px-3 py-1.5 rounded-md bg-white/5 hover:bg-white/10 ring-1 ring-white/10">+ Add mirror</button>
+        </div>
+        <div id="movieSources" class="mt-4 space-y-2"></div>
+      </div>
+
+      <!-- Series episodes -->
+      <div id="seriesSection" class="hidden bg-panel rounded-xl p-5 ring-1 ring-white/5">
+        <div class="flex items-center justify-between gap-3 flex-wrap">
+          <div>
+            <h2 class="font-semibold">Episodes</h2>
+            <p class="text-xs text-gray-500">Each episode has its own primary link and optional backup mirrors.</p>
+          </div>
+          <button type="button" id="addEpisode" class="text-sm px-3 py-1.5 rounded-md bg-white/5 hover:bg-white/10 ring-1 ring-white/10">+ Add episode</button>
+        </div>
+        <div id="episodesContainer" class="mt-4 space-y-4"></div>
+      </div>
+
+      <!-- Status + submit -->
+      <div id="formStatus" class="hidden rounded-md px-4 py-3 text-sm" role="alert"></div>
+
+      <div class="flex items-center justify-end gap-3 pb-10">
+        <button type="button" id="resetBtn" class="px-5 py-2.5 rounded-md text-sm bg-white/5 hover:bg-white/10 ring-1 ring-white/10">Clear form</button>
+        <button type="submit" id="submitBtn" class="px-6 py-2.5 rounded-md text-sm font-semibold bg-brand hover:bg-brand-dark transition disabled:opacity-60 disabled:cursor-wait">Publish title</button>
+      </div>
+    </form>
+
+    <!-- ============================================================ -->
+    <!-- MANAGE LIBRARY (below the upload form)                        -->
+    <!-- Filled in by admin.js from GET /api/media                     -->
+    <!-- ============================================================ -->
+    <section id="librarySection" class="border-t border-white/10 pt-8 pb-16">
+      <div class="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <h2 class="text-2xl font-bold">Manage Library</h2>
+          <p id="libraryCount" class="text-sm text-gray-500 mt-0.5">Loading…</p>
+        </div>
+        <div class="flex items-center gap-2 flex-wrap">
+          <input id="librarySearch" type="search" class="field !w-56" placeholder="Search titles…" />
+          <select id="libraryFilter" class="field !w-auto">
+            <option value="all">All</option>
+            <option value="movie">Movies</option>
+            <option value="series">Series</option>
+          </select>
+          <button type="button" id="refreshLibrary" class="text-sm px-3 py-2 rounded-md bg-white/5 hover:bg-white/10 ring-1 ring-white/10">↻ Refresh</button>
+        </div>
+      </div>
+
+      <div id="libraryStatus" class="hidden mt-4 rounded-md px-4 py-3 text-sm" role="status"></div>
+
+      <div id="libraryLoading" class="mt-8 flex justify-center">
+        <div class="h-8 w-8 rounded-full border-2 border-white/20 border-t-brand animate-spin" aria-label="Loading"></div>
+      </div>
+
+      <!-- Movies -->
+      <div id="moviesBlock" class="mt-6">
+        <h3 class="text-sm font-semibold uppercase tracking-widest text-gray-400">🎬 Movies</h3>
+        <ul id="moviesList" class="mt-3 space-y-2"></ul>
+      </div>
+
+      <!-- Series -->
+      <div id="seriesBlock" class="mt-8">
+        <h3 class="text-sm font-semibold uppercase tracking-widest text-gray-400">📺 Series</h3>
+        <ul id="seriesList" class="mt-3 space-y-3"></ul>
+      </div>
+    </section>
+  </main>
+
+  <!-- Templates -->
+  <template id="sourceRowTpl">
+    <div class="source-row grid gap-2 sm:grid-cols-[180px_1fr_auto] items-center">
+      <input class="field src-name" placeholder="Server name" maxlength="80" />
+      <input class="field src-url" type="url" placeholder="https://abyss.to/... embed URL" />
+      <button type="button" class="remove-source text-gray-500 hover:text-red-400 text-sm px-2 py-2" aria-label="Remove mirror">✕</button>
+    </div>
+  </template>
+
+  <template id="episodeTpl">
+    <div class="episode-card rounded-lg bg-black/30 ring-1 ring-white/10 p-4">
+      <div class="flex items-center justify-between">
+        <span class="episode-label text-sm font-semibold text-gray-300">Episode</span>
+        <button type="button" class="remove-episode text-xs text-gray-500 hover:text-red-400">Remove episode</button>
+      </div>
+      <div class="mt-3 grid gap-3 sm:grid-cols-[110px_110px_1fr]">
+        <div>
+          <label class="label">Season #</label>
+          <input class="field ep-season" type="number" min="0" step="1" value="1" />
+        </div>
+        <div>
+          <label class="label">Episode #</label>
+          <input class="field ep-number" type="number" min="0" step="1" value="1" />
+        </div>
+        <div>
+          <label class="label">Episode title</label>
+          <input class="field ep-title" maxlength="200" placeholder="Optional" />
+        </div>
+      </div>
+      <div class="mt-3">
+        <div class="flex items-center justify-between">
+          <span class="label mb-0">Video links</span>
+          <button type="button" class="add-ep-source text-xs px-2.5 py-1 rounded bg-white/5 hover:bg-white/10 ring-1 ring-white/10">+ Add mirror</button>
+        </div>
+        <div class="ep-sources mt-2 space-y-2"></div>
+      </div>
+    </div>
+  </template>
+  <!-- Library: one movie row -->
+  <template id="movieItemTpl">
+    <li class="flex items-center gap-3 bg-panel rounded-lg p-3 ring-1 ring-white/5">
+      <img class="item-poster w-10 h-14 object-cover rounded bg-black flex-none" alt="" loading="lazy" />
+      <div class="min-w-0 flex-1">
+        <p class="item-title font-semibold truncate"></p>
+        <p class="item-meta text-xs text-gray-500 truncate"></p>
+      </div>
+      <a class="item-watch text-xs text-gray-400 hover:text-white px-2" target="_blank" rel="noopener">Watch ↗</a>
+      <button type="button" class="delete-media text-xs font-semibold px-3 py-1.5 rounded-md bg-red-500/10 text-red-300 ring-1 ring-red-500/30 hover:bg-red-500/20 disabled:opacity-50">Delete Movie</button>
+    </li>
+  </template>
+
+  <!-- Library: one series card with episodes + inline add-episode form -->
+  <template id="seriesItemTpl">
+    <li class="bg-panel rounded-lg ring-1 ring-white/5 overflow-hidden">
+      <div class="flex items-center gap-3 p-3">
+        <img class="item-poster w-10 h-14 object-cover rounded bg-black flex-none" alt="" loading="lazy" />
+        <button type="button" class="toggle-episodes min-w-0 flex-1 text-left">
+          <p class="item-title font-semibold truncate"></p>
+          <p class="item-meta text-xs text-gray-500 truncate"></p>
+        </button>
+        <a class="item-watch text-xs text-gray-400 hover:text-white px-2" target="_blank" rel="noopener">Watch ↗</a>
+        <button type="button" class="toggle-episodes text-xs px-3 py-1.5 rounded-md bg-white/5 hover:bg-white/10 ring-1 ring-white/10"><span class="toggle-label">Show episodes</span></button>
+        <button type="button" class="delete-media text-xs font-semibold px-3 py-1.5 rounded-md bg-red-500/10 text-red-300 ring-1 ring-red-500/30 hover:bg-red-500/20 disabled:opacity-50">Delete Series</button>
+      </div>
+
+      <div class="episodes-panel hidden border-t border-white/5 bg-black/20 p-3">
+        <ul class="episode-list space-y-1.5"></ul>
+
+        <!-- Inline "add episode" form for this series -->
+        <form class="add-episode-form mt-4 grid gap-2 sm:grid-cols-[80px_90px_1fr_1.4fr_auto] items-end" novalidate>
+          <div>
+            <label class="label">Season</label>
+            <input class="field ae-season" type="number" min="0" step="1" value="1" required />
+          </div>
+          <div>
+            <label class="label">Episode #</label>
+            <input class="field ae-number" type="number" min="0" step="1" required />
+          </div>
+          <div>
+            <label class="label">Title</label>
+            <input class="field ae-title" maxlength="200" placeholder="Optional" />
+          </div>
+          <div>
+            <label class="label">Video link</label>
+            <input class="field ae-url" type="url" placeholder="https://abyss.to/... embed URL" required />
+          </div>
+          <button type="submit" class="ae-submit h-[38px] px-4 rounded-md text-sm font-semibold bg-brand hover:bg-brand-dark disabled:opacity-60">+ Add Episode</button>
+        </form>
+      </div>
+    </li>
+  </template>
+
+  <!-- Library: one episode row -->
+  <template id="episodeItemTpl">
+    <li class="flex items-center gap-3 rounded-md px-3 py-2 bg-white/[0.03]">
+      <span class="ep-code text-xs font-mono text-brand flex-none w-16"></span>
+      <span class="ep-name text-sm truncate flex-1"></span>
+      <span class="ep-links text-xs text-gray-500 flex-none"></span>
+      <button type="button" class="delete-episode text-xs px-2.5 py-1 rounded bg-red-500/10 text-red-300 ring-1 ring-red-500/30 hover:bg-red-500/20 disabled:opacity-50">Delete Episode</button>
+    </li>
+  </template>
+
+  <script src="/config.js"></script>
+  <script src="/admin.js"></script>
+</body>
+</html>

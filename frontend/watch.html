@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en" class="bg-[#0b0b10]">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Watch — TDub</title>
+  <meta name="theme-color" content="#0b0b10" />
+  <meta name="referrer" content="strict-origin-when-cross-origin" />
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: { extend: { colors: { brand: { DEFAULT: '#e11d48', dark: '#be123c' }, ink: '#0b0b10', panel: '#15151d' } } },
+    };
+  </script>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body class="has-ad-bar bg-ink text-gray-100 antialiased min-h-screen" data-page="watch">
+
+  <!-- Header -->
+  <header class="sticky top-0 z-40 bg-ink/95 backdrop-blur border-b border-white/5">
+    <div class="max-w-[1600px] mx-auto px-4 md:px-8 h-14 flex items-center gap-4">
+      <a href="/" class="inline-flex items-center gap-1 text-gray-300 hover:text-white text-sm" aria-label="Back to catalog">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg>
+        Back
+      </a>
+      <a href="/" class="text-2xl font-black tracking-wider select-none">T<span class="text-brand">DUB</span></a>
+    </div>
+  </header>
+
+  <!-- Loading -->
+  <div id="loading" class="flex flex-col items-center justify-center gap-4 py-40" role="status" aria-live="polite">
+    <div class="tdub-spinner"></div>
+    <p class="text-gray-400 text-sm">Loading video…</p>
+  </div>
+
+  <!-- Error -->
+  <div id="errorBox" class="hidden max-w-md mx-auto mt-32 text-center px-4">
+    <p class="text-lg font-semibold" id="errorTitle">Video not found.</p>
+    <p id="errorText" class="text-gray-400 text-sm mt-2"></p>
+    <a href="/" class="inline-block mt-5 bg-brand hover:bg-brand-dark px-5 py-2 rounded-md font-semibold">Back to catalog</a>
+  </div>
+
+  <main id="watchMain" class="hidden max-w-[1600px] mx-auto px-4 md:px-8 py-6">
+    <div class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
+
+      <!-- Left: player + servers + details -->
+      <section>
+        <!-- Responsive 16:9 player -->
+        <div class="relative w-full aspect-video bg-black rounded-lg overflow-hidden shadow-2xl ring-1 ring-white/10">
+          <iframe id="player"
+            class="absolute inset-0 w-full h-full"
+            src="about:blank"
+            title="TDub video player"
+            frameborder="0"
+            scrolling="no"
+            allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
+            allowfullscreen
+            referrerpolicy="origin"></iframe>
+          <div id="playerMsg" class="hidden absolute inset-0 flex items-center justify-center text-center text-gray-400 text-sm px-6 bg-black">
+            No stream available for this selection yet.
+          </div>
+        </div>
+
+        <!-- Now playing -->
+        <p id="nowPlaying" class="mt-3 text-sm text-gray-400"></p>
+
+        <!-- Server mirror switcher -->
+        <div class="mt-4 bg-panel rounded-lg p-4 ring-1 ring-white/5">
+          <div class="flex items-center justify-between gap-3 flex-wrap">
+            <h2 class="text-sm font-semibold text-gray-200">Servers</h2>
+            <p class="text-xs text-gray-500">If the video doesn’t load, try another server.</p>
+          </div>
+          <div id="serverList" class="mt-3 flex flex-wrap gap-2" role="tablist" aria-label="Video servers"></div>
+          <div id="epNav" class="hidden mt-4 flex gap-2">
+            <button id="prevEp" type="button" class="flex-1 sm:flex-none px-4 py-2 rounded-md bg-white/5 hover:bg-white/10 text-sm disabled:opacity-40 disabled:cursor-not-allowed">‹ Previous</button>
+            <button id="nextEp" type="button" class="flex-1 sm:flex-none px-4 py-2 rounded-md bg-white/5 hover:bg-white/10 text-sm disabled:opacity-40 disabled:cursor-not-allowed">Next ›</button>
+          </div>
+        </div>
+
+        <!-- Details -->
+        <div class="mt-6 flex gap-4 md:gap-6">
+          <img id="detailPoster" alt="" class="w-24 md:w-36 aspect-[2/3] object-cover rounded-md ring-1 ring-white/10 flex-shrink-0" />
+          <div class="min-w-0">
+            <h1 id="detailTitle" class="text-2xl md:text-3xl font-extrabold leading-tight"></h1>
+            <div id="detailMeta" class="mt-2 flex flex-wrap items-center gap-2 text-xs"></div>
+            <p id="detailDesc" class="mt-3 text-sm text-gray-300 leading-relaxed whitespace-pre-line"></p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Right: Season / Episode selector (series only) -->
+      <aside id="episodePanel" class="hidden bg-panel rounded-lg ring-1 ring-white/5 flex flex-col lg:max-h-[calc(100vh-180px)] lg:sticky lg:top-20">
+        <div class="p-4 border-b border-white/5 flex items-center justify-between gap-3">
+          <h2 class="font-semibold">Episodes</h2>
+          <label class="sr-only" for="seasonSelect">Season</label>
+          <select id="seasonSelect"
+            class="bg-black/60 border border-white/15 rounded-md text-sm px-3 py-1.5 focus:outline-none focus:border-brand"></select>
+        </div>
+        <div class="p-3 border-b border-white/5">
+          <input id="episodeFilter" type="search" placeholder="Filter episodes…"
+            class="w-full bg-black/40 border border-white/10 rounded-md text-sm px-3 py-1.5 placeholder-gray-500 focus:outline-none focus:border-brand" />
+        </div>
+        <ol id="episodeList" class="overflow-y-auto p-2 space-y-1 max-h-[420px] lg:max-h-none"></ol>
+      </aside>
+    </div>
+  </main>
+
+  <!-- Sticky bottom banner ad (non-intrusive, closable) -->
+  <div id="adBar" class="fixed bottom-0 inset-x-0 z-30 bg-black/90 backdrop-blur border-t border-white/10">
+    <div class="relative max-w-[760px] mx-auto flex items-center justify-center py-2 px-8">
+      <span class="absolute left-2 top-1 text-[10px] uppercase tracking-wider text-gray-500">Ad</span>
+      <!-- Paste your ad network's banner code inside #adSlot (728x90 desktop / 320x50 mobile). -->
+      <div id="adSlot" class="w-[320px] h-[50px] md:w-[728px] md:h-[90px] flex items-center justify-center rounded bg-white/5 border border-dashed border-white/10 text-gray-500 text-xs overflow-hidden">
+        Advertisement
+      </div>
+      <button id="adClose" type="button" aria-label="Close ad" class="absolute right-1 top-1 w-6 h-6 rounded-full text-gray-400 hover:text-white hover:bg-white/10 text-sm leading-none">✕</button>
+    </div>
+  </div>
+
+  <script src="/config.js"></script>
+  <script src="/app.js"></script>
+</body>
+</html>

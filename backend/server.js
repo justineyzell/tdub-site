@@ -43,6 +43,13 @@ if (!ADMIN_PASSWORD || ADMIN_PASSWORD.length < 8) {
   process.exit(1);
 }
 
+app.use(express.static(path.join(__dirname, '../frontend')));
+
+// Add this line right below it so the root URL loads your index.html file:
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, '../frontend/index.html'));
+});
+
 /* ------------------------------------------------------------------ */
 /* Mongoose models                                                     */
 /* ------------------------------------------------------------------ */

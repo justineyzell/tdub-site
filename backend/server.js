@@ -16,6 +16,7 @@ require('dotenv').config();
 
 const crypto = require('crypto');
 const express = require('express');
+const fs = require('fs');
 const path = require('path');
 const mongoose = require('mongoose');
 const cors = require('cors');
@@ -42,12 +43,6 @@ if (!ADMIN_PASSWORD || ADMIN_PASSWORD.length < 8) {
   console.error('[TDub] ADMIN_PASSWORD must be set and at least 8 characters long.');
   process.exit(1);
 }
-
-app.use(express.static(path.join(__dirname, '../frontend')));
-
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, '../frontend/index.html'));
-});
 
 /* ------------------------------------------------------------------ */
 /* Mongoose models                                                     */
@@ -260,14 +255,61 @@ const app = express();
 app.set('trust proxy', 1); // behind Render / Railway / Koyeb proxies
 app.disable('x-powered-by');
 
-// Optional: also serve the frontend files (http://localhost:3000/admin.html).
-// Placed before helmet so its strict security headers don't block the Tailwind CDN.
-app.use(express.static(path.join(__dirname, '../frontend')));
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, '../frontend/index.html'));
-});
+/* ---------- Static frontend: path-safe resolution ----------
+ * On Render the process may start from the repo root, from backend/, or with
+ * a custom Root Directory, so a plain '../frontend' string is not reliable.
+ * We resolve every plausible location and use the first one that really has
+ * an index.html. Absolute paths from path.resolve() cannot be escaped by a
+ * different working directory.
+ */
+const FRONTEND_DIR = (() => {
+  const candidates = [
+    path.resolve(__dirname, '..', 'frontend'), // backend/ -> <repo>/frontend (normal layout)
+    path.resolve(process.cwd(), 'frontend'), // process started at the repo root
+    path.resolve(process.cwd(), '..', 'frontend'), // process started inside backend/
+    path.resolve(__dirname, 'frontend'), // frontend copied next to server.js
+  ];
+  for (const dir of candidates) {
+    try {
+      if (fs.statSync(path.join(dir, 'index.html')).isFile()) return dir;
+    } catch {
+      /* not here - try the next candidate */
+    }
+  }
+  console.warn('[TDub] No frontend folder with index.html found. Serving the API only.');
+  return null;
+})();
+const INDEX_HTML = FRONTEND_DIR ? path.join(FRONTEND_DIR, 'index.html') : null;
+if (FRONTEND_DIR) console.log(`[TDub] Frontend served from ${FRONTEND_DIR}`);
 
-app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
+/* ---------- Security headers ----------
+ * Helmet must run BEFORE the static files so every response gets headers.
+ * CSP is relaxed exactly enough for this frontend: the Tailwind CDN, inline
+ * tailwind.config scripts, Google Fonts, remote posters and Abyss iframes.
+ */
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+    crossOriginEmbedderPolicy: false, // required for third-party video iframes
+    contentSecurityPolicy: FRONTEND_DIR
+      ? {
+          useDefaults: true,
+          directives: {
+            defaultSrc: ["'self'"],
+            scriptSrc: ["'self'", "'unsafe-inline'", 'https://cdn.tailwindcss.com'],
+            styleSrc: ["'self'", "'unsafe-inline'", 'https://cdn.tailwindcss.com', 'https://fonts.googleapis.com'],
+            fontSrc: ["'self'", 'https://fonts.gstatic.com', 'data:'],
+            imgSrc: ["'self'", 'data:', 'blob:', 'https:', 'http:'],
+            mediaSrc: ["'self'", 'blob:', 'https:', 'http:'],
+            connectSrc: ["'self'", 'https:', 'http:'],
+            frameSrc: ['https:', 'http:'],
+            objectSrc: ["'none'"],
+            upgradeInsecureRequests: null, // keep http embeds working
+          },
+        }
+      : false, // API-only mode: no frontend, no CSP needed
+  })
+);
 app.use(
   cors({
     origin(origin, cb) {
@@ -280,6 +322,23 @@ app.use(
   })
 );
 app.use(express.json({ limit: '1mb' }));
+
+/* ---------- Serve the frontend files ----------
+ * index: false, so "/" is handled by the fallback below and always gets a
+ * no-cache HTML response. Hashed/static assets may be cached for a while.
+ */
+if (FRONTEND_DIR) {
+  app.use(
+    express.static(FRONTEND_DIR, {
+      index: false,
+      extensions: ['html'], // /watch -> watch.html
+      maxAge: '1h',
+      setHeaders(res, filePath) {
+        if (filePath.endsWith('.html')) res.setHeader('Cache-Control', 'no-cache');
+      },
+    })
+  );
+}
 
 const adminLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -443,6 +502,27 @@ app.delete(
 
 // Unknown API routes.
 app.use('/api', (req, res) => res.status(404).json({ error: 'Not found' }));
+
+/* ---------- Frontend fallback (single-page routing) ----------
+ * Everything that is not an /api/ route and not a real file returns the
+ * frontend's index.html, so /, /watch, /watch.html?id=... and /admin.html all
+ * work. Requests that look like an asset (have a file extension) are left to
+ * a real 404 instead of being answered with HTML.
+ * MUST stay below every API route and above the error handler.
+ */
+if (INDEX_HTML) {
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api/')) return next(); // safety net
+    if (path.extname(req.path)) return next(); // missing asset -> 404 below
+    res.set('Cache-Control', 'no-cache');
+    res.sendFile(INDEX_HTML, (err) => (err ? next(err) : undefined));
+  });
+}
+
+// Plain 404 for anything left over (non-API requests, missing assets).
+app.use((req, res) => {
+  res.status(404).type('text/plain').send('Not found');
+});
 
 // Central error handler.
 // eslint-disable-next-line no-unused-vars
